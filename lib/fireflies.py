@@ -1,3 +1,19 @@
+from dataclasses import dataclass, field
+
+import numpy as np
+
+
+@dataclass
+class Parameters:
+    FLASH_DURATION_SECONDS = 0.1
+    RESETTING_STRENGTH = 0.5
+
+    angular_frequency: float
+    phase: float
+    duration: float = field(default=FLASH_DURATION_SECONDS)
+    resetting_strength: float = field(default=RESETTING_STRENGTH)
+
+
 class Firefly:
     class State:
         FLASHING = 0
@@ -7,7 +23,7 @@ class Firefly:
         """
         :param flash_parameters: A dictionary containing parameters of firefly flashing
         """
-        self.dynamic_parameters = flash_parameters
+        self.parameters = flash_parameters
         self.state = self.State.WAITING
 
     def should_flash(self):
@@ -21,7 +37,7 @@ class Firefly:
 
 
 class EuclideanFirefly(Firefly):
-    def __init__(self, flash_parameters, coordinates):
+    def __init__(self, flash_parameters, coordinates: np.array):
         """
         EuclideanFirefly is a subclass of Firefly that represents a firefly in a
          euclidean (2D or 3D) space
@@ -30,4 +46,4 @@ class EuclideanFirefly(Firefly):
         :param coordinates: A tuple containing the x and y coordinates of the firefly
         """
         super().__init__(flash_parameters)
-        self.coordinates = coordinates
+        self.coordinates: np.array = coordinates
