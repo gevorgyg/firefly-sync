@@ -25,15 +25,17 @@ class Firefly:
         self.state = self.State.WAITING
         self.flash_times = []
 
-    def advance_phase(self, current_time: float):
+    def advance_phase(self):
         """
         Advance phase by dt using natural frequency
         """
+        self.phase += self.freq * self.dt
+
+    def wrap_and_flash(self, current_time):
         if self.phase >= 2 * np.pi:
             self.phase %= 2 * np.pi
             self.state = self.State.FLASHING
             self.flash_times.append(current_time)
-        self.phase += self.freq * self.dt
 
     def correct_phase(self, neighbors: List['Firefly'], current_time: float):
         """

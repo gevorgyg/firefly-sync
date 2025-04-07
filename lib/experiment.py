@@ -2,7 +2,7 @@ from itertools import combinations
 
 import numpy as np
 import networkx as nx
-
+import os
 import matplotlib.pyplot as plt
 
 from lib.fireflies import Firefly
@@ -86,3 +86,60 @@ class Experiment:
     def is_valid_position(self, x, y):
         # do not allow fireflies to be placed on boundary
         return self.min_x < x < self.max_x and self.min_y < y < self.max_y
+
+    def run(self, simulation_time=10.0, visualization_interval=0.5, save_plots=False, output_dir="simulation_results"):
+        """
+        Run the firefly synchronization experiment.
+
+        Args:
+            simulation_time: Total simulation time in seconds
+            visualization_interval: Interval between visualizations in seconds
+            save_plots: Whether to save plot images instead of displaying them
+            output_dir: Directory to save plots if save_plots is True
+        """
+        # Create output directory if needed
+        if save_plots and not os.path.exists(output_dir):
+            os.makedirs(output_dir)
+
+        # Form network based on proximity
+        self.form_network()
+
+        # Get all fireflies from network nodes
+        fireflies = list(self.network.nodes)
+        if not fireflies:
+            print("No fireflies in the network. Add fireflies before running.")
+            return
+
+        # Get timestep from first firefly
+        dt = fireflies[0].dt
+
+        # Calculate total number of steps
+        total_steps = int(simulation_time / dt)
+        # vis_step_interval = int(visualization_interval / dt)
+
+        phase_history = {i: [] for i in range(len(fireflies))}
+        time_points = []
+
+        for step in range(total_steps):
+            current_time = step * dt
+
+            # 1. FIRST reset all states (clear previous flashes)
+            for fly in fireflies:
+                fly.reset_state()
+
+            # 2. Record phases before updates
+            for i, fly in enumerate(fireflies):
+                phase_history[i].append(fly.phase)
+
+            # 3. Advance all phases naturally first
+            for fly in fireflies:
+                fly.advance_phase(current_time)  # Phase += freq*dt
+
+            # 4. Then apply corrections based on NEIGHBORS' PREVIOUS STATE
+            for fly in fireflies:
+                neighbors = self.network.neighbors(fly)
+                fly.correct_phase(neighbors, current_time)
+
+            # 5. Handle phase wrapping after all updates
+            for fly in fireflies:
+                fly.wrap_and_flash(current_time)
