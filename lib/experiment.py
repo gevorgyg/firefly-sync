@@ -3,8 +3,9 @@ from itertools import combinations
 import numpy as np
 import networkx as nx
 
-from lib.fireflies import EuclideanFirefly
 import matplotlib.pyplot as plt
+
+from lib.fireflies import Firefly
 
 GRID_WIDTH = 1
 GRID_HEIGHT = 1
@@ -64,7 +65,7 @@ class Experiment:
         self.network: nx.Graph = nx.Graph()
         self.visualiser = Visualiser(self.min_x, self.max_x, self.min_y, self.max_y)
 
-    def add_firefly(self, firefly: EuclideanFirefly):
+    def add_firefly(self, firefly: Firefly):
         if not self.is_valid_position(firefly.coordinates[0], firefly.coordinates[1]):
             raise ValueError("Firefly position is out of bounds.")
         self.network.add_node(firefly)
