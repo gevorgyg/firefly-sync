@@ -1,124 +1,89 @@
-from symtable import Function
-from typing import Callable
-
 import numpy as np
+from typing import Callable, List
 
 
 class Firefly:
-    DEFAULT_PHASE_CHANGE = 0.05
-    DEFAULT_FLASH_DURATION_SECONDS = 0.1
-    DEFAULT_RESETTING_STRENGTH = 0.1
-    DEFAULT_ANGULAR_FREQUENCY = 1.0
+    DEFAULT_RESET_STRENGTH = 0.1
+    DEFAULT_ANGULAR_FREQ = 2 * np.pi  # 1Hz natural frequency
 
     class State:
         FLASHING = 0
         WAITING = 1
 
-    def __init__(self, phase, x_cord, y_cord, angular_frequency=1.0, duration=DEFAULT_FLASH_DURATION_SECONDS,
-                 resetting_strength=DEFAULT_RESETTING_STRENGTH):
+    def __init__(self, phase: float, x: float, y: float, dt: float,
+                 freq: float = DEFAULT_ANGULAR_FREQ,
+                 reset_strength: float = DEFAULT_RESET_STRENGTH):
         """
-        Firefly class representing a firefly in the network.
-
-        :param phase: Initial phase of the firefly.
-        :param x_cord: X coordinate of the firefly in 2D space
-        :param y_cord: Y coordinate of the firefly in 2D space
-        :param angular_frequency: Angular frequency of the firefly.
-        :param duration: Duration of the flash.
-        :param resetting_strength: Strength of the resetting effect.
+        Base firefly class with core phase advancement logic
         """
         self.phase = phase
-        self.x_cord = x_cord
-        self.y_cord = y_cord
-        self.angular_frequency = angular_frequency
-        self.duration = duration
-        self.resetting_strength = resetting_strength
+        self.x = x
+        self.y = y
+        self.dt = dt
+        self.freq = freq
+        self.reset_strength = reset_strength
         self.state = self.State.WAITING
+        self.flash_times = []
 
-    def update(self, neighbours, current_time, dt):
+    def advance_phase(self, current_time: float):
         """
-         Update the firefly phase based on neighbors' flashing
-         """
+        Advance phase by dt using natural frequency
+        """
+        if self.phase >= 2 * np.pi:
+            self.phase %= 2 * np.pi
+            self.state = self.State.FLASHING
+            self.flash_times.append(current_time)
+        self.phase += self.freq * self.dt
+
+    def correct_phase(self, neighbors: List['Firefly'], current_time: float):
+        """
+        Base phase correction method - intentionally empty to be overridden
+        """
         pass
 
-    def increment_phase(self, dt):
-        self.phase += self.angular_frequency * dt
-        if self.phase >= 1:
-            self.phase %= 1
-            self._flash()
-
-    """
-    The fireflies should call _flash() from the inside of a class and be reset with reset() 
-    by the caller after every simulation step
-    """
-
-    def _flash(self):
-        self.state = self.State.FLASHING
-
-    def reset(self):
+    def reset_state(self):
+        """Reset flashing state after each simulation step"""
         self.state = self.State.WAITING
 
 
 class LowPassFirefly(Firefly):
-    """
-    A firefly that uses a low-pass filter to update its phase based on the phases of its neighbours.
-    Now supports multiple kernel types for phase modulation.
-    """
-    MAX_HISTORY_TIME = 1.0  # Only consider flashes within this time window
+    DEFAULT_DECAY = 2.0
 
-    def __init__(self, phase, x_cord, y_cord, kernel: Callable, angular_frequency=1.0,
-                 duration=Firefly.DEFAULT_FLASH_DURATION_SECONDS,
-                 resetting_strength=Firefly.DEFAULT_RESETTING_STRENGTH,
-                 ):
+    def __init__(self, phase: float, x: float, y: float,
+                 freq: float = Firefly.DEFAULT_ANGULAR_FREQ,
+                 reset_strength: float = Firefly.DEFAULT_RESET_STRENGTH,
+                 memory_window: float = 2.0):
         """
-        Initialize with optional kernel type selection.
+        Firefly with low-pass filtered flash processing
 
-        :param kernel: TODO
+        Args:
+            memory_window: Time window for flash memory (seconds)
         """
-        super().__init__(phase, x_cord, y_cord, angular_frequency, duration, resetting_strength)
-        self.flash_history = []
-        self.kernel = kernel
+        super().__init__(phase, x, y, freq, reset_strength)
+        self.kernel = self._sin_kernel
+        self.memory_window = memory_window
+        self.observed_flashes = []  # Times of observed neighbor flashes
 
-    def _calculate_kernel(self, time_since_flash):
-        """Calculate the kernel value based on selected type"""
-        if self.kernel_type == 'sinusoidal':
-            # Original phase-sensitive kernel
-            return np.sin(self.angular_frequency * time_since_flash) * np.exp(-time_since_flash)
-        elif self.kernel_type == 'exponential':
-            # Simplified phase-insensitive kernel
-            return self.coupling_coeff * np.exp(-time_since_flash)
-        else:
-            raise ValueError(f"Unknown kernel type: {self.kernel_type}")
+    def _exp_kernel(self, t: float, decay=DEFAULT_DECAY):
+        return np.exp(-decay * t) if t >= 0 else 0
 
-    def update(self, neighbours, current_time, dt):
-        """
-        Update the firefly phase using the selected kernel type.
+    def _sin_kernel(self, t, decay=DEFAULT_DECAY):
+        return np.sin(2 * np.pi * t) * np.exp(-decay * t) if t >= 0 else 0
 
-        :param neighbours: List of neighboring fireflies
-        :param current_time: Current simulation time
-        :param dt: Time step size
-        """
-        # Update flash history - record any new flashes
-        for neighbour in neighbours:
-            if neighbour.state == self.State.FLASHING:
-                self.flash_history.append(current_time)
+    def correct_phase(self, neighbors: List[Firefly], current_time: float):
+        t = current_time
+        # Record new flashes from neighbors
+        for neighbor in neighbors:
+            if neighbor.state == self.State.FLASHING:
+                self.observed_flashes.append(t)
 
-        # Clean up old flash history
-        self.flash_history = [t for t in self.flash_history
-                              if current_time - t <= self.MAX_HISTORY_TIME]
+        # Remove old flashes
+        self.observed_flashes = [flash_t for flash_t in self.observed_flashes
+                                 if t - flash_t <= self.memory_window]
 
-        # Calculate total influence using selected kernel
-        influence = 0
-        for flash_time, neighbour in self.flash_history:
-            time_since_flash = current_time - flash_time
-            influence += self.kernel(time_since_flash)
+        # Compute convolution (S ∗ h)(t), where S is an impulse train which is modeled
+        influence = sum(self.kernel(t - flash_t)
+                        for flash_t in self.observed_flashes)
 
-        self.phase += (self.angular_frequency + self.resetting_strength * influence) * dt
-
-        # Normalize phase to [0, 2π)
-        self.phase = self.phase % (2 * np.pi)
-
-        # Update state based on phase
-        if 0 <= self.phase < self.duration * self.angular_frequency:
-            self.state = self.State.FLASHING
-        else:
-            self.state = self.State.WAITING
+        # Modify phase based on influence
+        self.phase += self.reset_strength * influence * self.dt
