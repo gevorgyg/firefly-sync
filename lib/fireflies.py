@@ -25,11 +25,15 @@ class Firefly:
         self.state = self.State.WAITING
 
     def advance_phase(self, epsilon):
-        """
-        d(theta)/dt = omega, therefore d(theta) = omega * dt
-        """
-        self.state = self.State.WAITING
+        if self.state == self.State.FLASHING:
+            return
         self.phase += epsilon
         if self.phase >= self.phase_threshold:
-            self.phase %= self.phase_threshold
             self.state = self.State.FLASHING
+
+    def is_flashing(self):
+        return self.state == self.State.FLASHING
+
+    def reset(self):
+        self.phase = 0
+        self.state = self.State.WAITING
