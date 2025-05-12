@@ -21,6 +21,9 @@ class Experiment:
         self.network = network
         self.epsilon = epsilon
         self.counter = 0.0
+        # results
+        self.time_to_labels = {}  # counter: [labels of fireflies that flashed]
+        self.time_to_phase = {}  # counter: [phase of each firefly]
 
     def run(self):
         while self.counter <= self.duration:
@@ -53,3 +56,5 @@ class Experiment:
                     neighbour.advance_phase(self.epsilon)
                     if neighbour.is_flashing():
                         flashing.append(neighbour)
+        self.time_to_labels[self.counter] = [1 if f.is_flashing() else 0 for f in self.network.nodes]
+        self.time_to_phase[self.counter] = [f.phase for f in self.network.nodes]
