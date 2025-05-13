@@ -4,8 +4,7 @@ from typing import Callable, List
 
 
 class Firefly:
-    DEFAULT_RESET_STRENGTH = 0.1
-    DEFAULT_ANGULAR_FREQ = 2 * np.pi  # 1Hz natural frequency
+    DEFAULT_FREQ = 1  # 1Hz natural frequency
     PHASE_THRESHOLD = 1.0  # When phase is >= PHASE_THRESHOLD, firefly is considered to be flashing
 
     class State:
@@ -13,15 +12,13 @@ class Firefly:
         WAITING = 0
 
     def __init__(self, id: int, phase: float,
-                 neighbours: List['Firefly'],
-                 freq: float = DEFAULT_ANGULAR_FREQ,
+                 freq: float = DEFAULT_FREQ,
                  phase_threshold: float = PHASE_THRESHOLD):
         """
         Base firefly class with core phase advancement logic
         """
         self.id = id
         self.phase = phase
-        self.neighbours = neighbours
         self.freq = freq
         self.phase_threshold = phase_threshold
         self.state = self.State.WAITING
@@ -31,6 +28,7 @@ class Firefly:
             return
         self.phase += epsilon
         if self.phase >= self.phase_threshold:
+            self.phase = self.PHASE_THRESHOLD
             self.state = self.State.FLASHING
 
     def is_flashing(self):

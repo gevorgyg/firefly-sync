@@ -35,26 +35,30 @@ class Experiment:
         """
         Advance the simulation by time_step units.
         """
-
-        # 0. reset all fireflies
-        for firefly in self.network.nodes:
-            firefly.reset()
-
+        # 0. reset all flashing fireflies
+        for node in self.network.nodes:
+            firefly = self.network.nodes[node]['firefly']
+            if firefly.is_flashing():
+                firefly.reset()
         # 1. update phase of each firefly using its natural frequency
-        for firefly in self.network.nodes:
+        for node in self.network.nodes:
+            firefly = self.network.nodes[node]['firefly']
             d_theta = firefly.freq * self.time_step
             firefly.advance_phase(d_theta)
         # 2. process cascading flashes: for this we will save fireflies
         #    that have "fired" and update fireflies that are flashing
         fired = set()
-        flashing = [f for f in self.network.nodes if f.is_flashing()]
+        flashing = [n for n in self.network.nodes if self.network.nodes[n]['firefly'].is_flashing()]
         while flashing:
             current = flashing.pop()
             fired.add(current)
-            for neighbour in current.neighbours:
+            for neighbour in nx.neighbors(self.network, current):
                 if neighbour not in fired:
-                    neighbour.advance_phase(self.epsilon)
-                    if neighbour.is_flashing():
+                    neighbour_firefly = self.network.nodes[neighbour]['firefly']
+                    neighbour_firefly.advance_phase(self.epsilon)
+                    if neighbour_firefly.is_flashing():
                         flashing.append(neighbour)
-        self.time_to_labels[self.counter] = [1 if f.is_flashing() else 0 for f in self.network.nodes]
-        self.time_to_phase[self.counter] = [f.phase for f in self.network.nodes]
+        self.time_to_labels[self.counter] = [1 if self.network.nodes[n]['firefly'].is_flashing() else 0 for n in
+                                             self.network.nodes]
+        self.time_to_phase[self.counter] = [self.network.nodes[n]['firefly'].phase for n in
+                                            self.network.nodes]
