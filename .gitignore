@@ -2,3 +2,4 @@
 .ipynb_checkpoints/
 fireflies/__pycache__/
 poetry.lock
+tests/__pycache__
