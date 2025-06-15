@@ -9,9 +9,9 @@ GRID_HEIGHT = 1
 
 
 class Experiment:
-    EPSILON = 0.1
+    EPSILON_RAD = 0.1
 
-    def __init__(self, network: nx.Graph, duration, time_step, epsilon=EPSILON):
+    def __init__(self, network: nx.Graph, duration, time_step, epsilon_rad=EPSILON_RAD):
         """
         Handling simulation logic.
 
@@ -19,7 +19,7 @@ class Experiment:
         self.duration = duration
         self.time_step = time_step
         self.network = network
-        self.epsilon = epsilon
+        self.epsilon = epsilon_rad
         self.counter = 0.0
         # results
         self.time_to_labels = {}  # counter: [labels of fireflies that flashed]
@@ -43,7 +43,7 @@ class Experiment:
         # 1. update phase of each firefly using its natural frequency
         for node in self.network.nodes:
             firefly = self.network.nodes[node]['firefly']
-            d_theta = firefly.freq * self.time_step
+            d_theta = firefly.freq_rad_s * self.time_step
             firefly.advance_phase(d_theta)
         # 2. process cascading flashes: for this we will save fireflies
         #    that have "fired" and update fireflies that are flashing

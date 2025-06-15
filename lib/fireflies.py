@@ -1,34 +1,31 @@
 import numpy as np
+from numpy import pi
 import networkx as nx
-from typing import Callable, List
 
 
 class Firefly:
-    DEFAULT_FREQ = 1  # 1Hz natural frequency
-    PHASE_THRESHOLD = 1.0  # When phase is >= PHASE_THRESHOLD, firefly is considered to be flashing
+    DEFAULT_FREQ_RAD_S = 2 * pi  # 2*pi rad natural frequency
+    PHASE_THRESHOLD_RAD = 2 * pi  # When phase is >= PHASE_THRESHOLD, firefly is considered to be flashing
 
     class State:
         FLASHING = 1
         WAITING = 0
 
     def __init__(self, id: int, phase: float,
-                 freq: float = DEFAULT_FREQ,
-                 phase_threshold: float = PHASE_THRESHOLD):
-        """
-        Base firefly class with core phase advancement logic
-        """
+                 freq_rad_s: float = DEFAULT_FREQ_RAD_S,
+                 phase_threshold_rad: float = PHASE_THRESHOLD_RAD):
         self.id = id
         self.phase = phase
-        self.freq = freq
-        self.phase_threshold = phase_threshold
+        self.freq_rad_s = freq_rad_s
+        self.phase_threshold_rad = phase_threshold_rad
         self.state = self.State.WAITING
 
     def advance_phase(self, epsilon):
         if self.state == self.State.FLASHING:
             return
         self.phase += epsilon
-        if self.phase >= self.phase_threshold:
-            self.phase = self.PHASE_THRESHOLD
+        if self.phase >= self.phase_threshold_rad:
+            self.phase = self.PHASE_THRESHOLD_RAD
             self.state = self.State.FLASHING
 
     def is_flashing(self):
