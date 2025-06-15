@@ -1,4 +1,3 @@
-from itertools import combinations
 import networkx as nx
 import matplotlib.pyplot as plt
 
@@ -60,5 +59,5 @@ class Experiment:
                         flashing.append(neighbour)
         self.time_to_labels[self.counter] = [1 if self.network.nodes[n]['firefly'].is_flashing() else 0 for n in
                                              self.network.nodes]
-        self.time_to_phase[self.counter] = [self.network.nodes[n]['firefly'].phase for n in
+        self.time_to_phase[self.counter] = [self.network.nodes[n]['firefly'].phase_rad for n in
                                             self.network.nodes]
