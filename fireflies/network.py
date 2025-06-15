@@ -16,3 +16,23 @@ def create_d_regular_network(phases: np.array, degree, seed=None) -> nx.Graph:
     firefly_dict = {node: Firefly(node, phase) for (node, phase) in zip(G.nodes(), phases)}
     nx.set_node_attributes(G, firefly_dict, 'firefly')
     return G
+
+
+# Extract phases from the graph
+def get_phases(network: nx.Graph) -> np.array:
+    """
+    Extract the phases of fireflies from the graph.
+
+    Args:
+        network (nx.Graph): The network graph containing fireflies.
+
+    Returns:
+        np.array: Array of firefly phases.
+    """
+    return np.array([network.nodes[node]['firefly'].phase_rad for node in network.nodes])
+
+
+def set_phases(network: nx.Graph, updated_phases_rad: np.array):
+    for node, phase in zip(network.nodes(), updated_phases_rad):
+
+        network.nodes[node]['firefly'].phase_rad = phase
