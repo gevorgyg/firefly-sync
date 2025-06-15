@@ -1,7 +1,8 @@
 import networkx as nx
+from networkx.generators.expanders import random_regular_expander_graph
 import numpy as np
 
-from models import Firefly
+from fireflies.models import Firefly  # Added 'import' keyword
 
 
 def create_d_regular_network(phases: np.array, degree, seed=None) -> nx.Graph:
@@ -10,7 +11,8 @@ def create_d_regular_network(phases: np.array, degree, seed=None) -> nx.Graph:
     each firefly has the same number of neighbours, and as such we don't have to think about
     topology of the network.
     """
-    G = nx.random_regular_expander_graph(len(phases), degree, seed=seed)  # we use expander graph to ensure connectivity
+    # Use the directly imported function instead of accessing through nx
+    G = random_regular_expander_graph(len(phases), degree, seed=seed)
     firefly_dict = {node: Firefly(node, phase) for (node, phase) in zip(G.nodes(), phases)}
     nx.set_node_attributes(G, firefly_dict, 'firefly')
     return G
