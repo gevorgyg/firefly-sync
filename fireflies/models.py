@@ -4,13 +4,7 @@ import numpy as np
 from numpy import pi
 import networkx as nx
 
-DEFAULT_FREQ_RAD_S = 2 * pi  # 2*pi rad natural frequency
-PHASE_THRESHOLD_RAD = 2 * pi  # When phase is >= PHASE_THRESHOLD, firefly is considered to be flashing
-
-
-class State(Enum):
-    FLASHING = 1
-    WAITING = 0
+from utils import DEFAULT_FREQ_RAD_S, DEFAULT_PHASE_THRESHOLD_RAD, State
 
 
 @dataclass
@@ -18,7 +12,7 @@ class Firefly:
     id: int
     phase_rad: float
     freq_rad_s: float = DEFAULT_FREQ_RAD_S
-    flash_threshold: float = PHASE_THRESHOLD_RAD
+    flash_threshold: float = DEFAULT_PHASE_THRESHOLD_RAD
     state: State = State.WAITING
 
     def advance_phase(self, t_s: float):
@@ -42,15 +36,3 @@ class Firefly:
         """ Reset the firefly's phase and state. """
         self.phase_rad = 0.0
         self.state = State.WAITING
-
-
-def create_d_regular_network(phases: np.array, degree, seed=None) -> nx.Graph:
-    """
-    Create a d-regular random graph on nodes_num nodes. We use a regular graph so that
-    each firefly has the same number of neighbours, and as such we don't have to think about
-    topology of the network.
-    """
-    G = nx.random_regular_graph(degree, len(phases), seed=seed)
-    firefly_dict = {node: Firefly(node, phase) for (node, phase) in zip(G.nodes(), phases)}
-    nx.set_node_attributes(G, firefly_dict, 'firefly')
-    return G

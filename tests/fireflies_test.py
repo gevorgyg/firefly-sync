@@ -1,5 +1,5 @@
 from numpy import pi
-from lib.fireflies import Firefly
+from fireflies import Firefly
 
 
 def test_firefly_creation():
@@ -13,7 +13,6 @@ def test_firefly_advance_phase():
     firefly = Firefly(id=1, freq_rad_s=pi / 2, phase_rad=pi / 2, flash_threshold=2 * pi)
     firefly.advance_phase(1.0)  # Advance by 1 second
     assert firefly.phase_rad - pi < 1e-6  # Phase should be pi after advancing
-    # complete this function (test flashing case)
     firefly.advance_phase(2.0)
     assert firefly.is_flashing()  # Should be flashing after reaching the threshold
     firefly.reset()

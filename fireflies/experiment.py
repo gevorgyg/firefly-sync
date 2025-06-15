@@ -1,7 +1,4 @@
 import networkx as nx
-import matplotlib.pyplot as plt
-
-from lib.fireflies import Firefly
 
 GRID_WIDTH = 1
 GRID_HEIGHT = 1
